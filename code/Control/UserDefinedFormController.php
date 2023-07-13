@@ -122,6 +122,10 @@ class UserDefinedFormController extends PageController
      */
     public function index(HTTPRequest $request = null)
     {
+        // If $this is not a subclass of UserDefinedForm
+        if (!$this->dataRecord instanceof UserDefinedForm) {
+            return $this->httpError(404);
+        }
         $form = $this->Form();
         if ($this->Content && $form && !$this->config()->disable_form_content_shortcode) {
             $hasLocation = stristr($this->Content, '$UserDefinedForm');
@@ -183,7 +187,11 @@ class UserDefinedFormController extends PageController
         if (!$form) {
             return;
         }
-        $formFields = $form->Fields();
+
+        $formFields = null;
+        if ($form->hasMethod('Fields')) {
+            $formFields = $form->Fields();
+        }
 
         $watch = [];
 

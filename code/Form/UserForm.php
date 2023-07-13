@@ -121,9 +121,13 @@ class UserForm extends Form
         $fields = UserFormsFieldList::create();
         $target = $fields;
 
-        foreach ($this->controller->data()->Fields() as $field) {
-            $target = $target->processNext($field);
+        $data = $this->controller->data();
+        if ($data->hasMethod('Fields')) {
+            foreach ($data->Fields() as $field) {
+                $target = $target->processNext($field);
+            }
         }
+
         $fields->clearEmptySteps();
         $this->extend('updateFormFields', $fields);
         $fields->setForm($this);
@@ -166,13 +170,16 @@ class UserForm extends Form
      */
     public function getRequiredFields()
     {
-        // Generate required field validator
-        $requiredNames = $this
-            ->getController()
-            ->data()
-            ->Fields()
-            ->filter('Required', true)
-            ->column('Name');
+        $requiredNames = [];
+        $data = $this->controller->data();
+        if ($data->hasMethod('Fields')) {
+            // Generate required field validator
+            $requiredNames = $data
+                ->Fields()
+                ->filter('Required', true)
+                ->column('Name');
+        }
+
         $requiredNames = array_merge($requiredNames, $this->getEmailRecipientRequiredFields());
         $required = UserFormsRequiredFields::create($requiredNames);
         $this->extend('updateRequiredFields', $required);
@@ -219,10 +226,13 @@ class UserForm extends Form
             'EmailReplyTo' => 'SendEmailFromField'
         ];
 
-        foreach ($this->getController()->data()->EmailRecipients() as $recipient) {
-            foreach ($recipientFieldsMap as $textField => $dynamicFormField) {
-                if (empty($recipient->$textField) && $recipient->getComponent($dynamicFormField)->exists()) {
-                    $requiredFields[] = $recipient->getComponent($dynamicFormField)->Name;
+        $data = $this->controller->data();
+        if ($data->hasMethod('EmailRecipients')) {
+            foreach ($data->EmailRecipients() as $recipient) {
+                foreach ($recipientFieldsMap as $textField => $dynamicFormField) {
+                    if (empty($recipient->$textField) && $recipient->getComponent($dynamicFormField)->exists()) {
+                        $requiredFields[] = $recipient->getComponent($dynamicFormField)->Name;
+                    }
                 }
             }
         }
